@@ -43,9 +43,7 @@ export class UserController {
   async find(req: RequestWithId, res: Response) {
     const { id } = req.params;
 
-    const user = await prisma.user.findUnique({ where: { id: +id } });
-
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: +id } });
 
     return res.json(user);
   }
