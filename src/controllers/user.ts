@@ -54,9 +54,35 @@ export class UserController {
   async find(req: RequestWithId, res: Response) {
     const { id } = req.params;
 
-    const user = await prisma.user.findUniqueOrThrow({ where: { id: +id } });
+    try {
+      const user = await prisma.user.findUniqueOrThrow({ where: { id: +id } });
 
-    return res.json(successResponse('', user));
+      return res.json(successResponse('', user));
+    } catch (e) {
+      if (!(e instanceof Error)) return res.status(400).json(unknownError);
+
+      if (e instanceof z.ZodError)
+        return res
+          .status(417)
+          .json(
+            errorResponse('Validation error', 'E0001', { issues: e.issues })
+          );
+
+      if ('code' in e) {
+        switch (e.code) {
+          case 'P2025':
+            return res
+              .status(400)
+              .json(errorResponse('User not found', e.code));
+          default:
+            return res
+              .status(400)
+              .json(errorResponse('Unknown error', e.code + ''));
+        }
+      }
+
+      return res.status(400).json(unknownError);
+    }
   }
   async update(req: RequestWithId, res: Response) {
     const { id } = req.params;
@@ -106,7 +132,7 @@ export class UserController {
 
       socket.emit(socketKeys.USER_ACTION);
 
-      return res.json({ message: 'User deleted with success' });
+      return res.json(successResponse(`User deleted with success`));
     } catch (e) {
       if (!(e instanceof Error)) return res.status(400).json(unknownError);
 
@@ -143,8 +169,25 @@ export class UserController {
       if (e instanceof z.ZodError) {
         return res
           .status(417)
-          .json({ error: 'é necessário informar o nome do usuário' });
+          .json(
+            errorResponse('Validation error', 'E0001', { issues: e.issues })
+          );
       }
+
+      if ('code' in e) {
+        switch (e.code) {
+          case 'P2002':
+            return res
+              .status(400)
+              .json(errorResponse('User already exists', e.code));
+          default:
+            return res
+              .status(400)
+              .json(errorResponse('Unknown error', e.code + ''));
+        }
+      }
+
+      return res.status(400).json(unknownError);
     }
   }
 }
