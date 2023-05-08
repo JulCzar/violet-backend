@@ -62,19 +62,17 @@ export class HealthController {
 
       if ('code' in e) {
         switch (e.code) {
-          case 'P2002':
+          case 'P2025':
             return res
               .status(400)
-              .json(errorResponse('Duplicate entry', 'P2002'));
+              .json(errorResponse('Entry not found', e.code));
           default:
-            console.log(e.code);
             return res
               .status(400)
               .json(errorResponse('Unknown error', e.code + ''));
         }
       }
 
-      console.log(e);
       return res.status(400).json(unknownError);
     }
   }
@@ -128,10 +126,10 @@ export class HealthController {
 
       if ('code' in e) {
         switch (e.code) {
-          case 'P2002':
+          case 'P2025':
             return res
               .status(400)
-              .json(errorResponse('Duplicate entry', e.code));
+              .json(errorResponse('Entry not found', e.code));
           default:
             return res
               .status(400)
@@ -139,7 +137,6 @@ export class HealthController {
         }
       }
 
-      console.log(e);
       return res.status(400).json(unknownError);
     }
   }

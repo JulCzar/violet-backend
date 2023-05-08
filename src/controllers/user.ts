@@ -138,6 +138,10 @@ export class UserController {
 
       if ('code' in e) {
         switch (e.code) {
+          case 'P2025':
+            return res
+              .status(400)
+              .json(errorResponse('User not found', e.code));
           default:
             return res
               .status(400)
@@ -154,7 +158,7 @@ export class UserController {
 
       const _user = await prisma.user.findFirst({ where: { name } });
 
-      if (_user) return res.json(_user);
+      if (_user) return res.json(successResponse('', _user));
 
       const _userCreated = await prisma.user.create({
         data: { name },
@@ -162,7 +166,7 @@ export class UserController {
 
       socket.emit(socketKeys.USER_ACTION);
 
-      return res.json(_userCreated);
+      return res.json(successResponse('', _userCreated));
     } catch (e) {
       if (!(e instanceof Error)) return res.status(400).json(unknownError);
 
@@ -176,10 +180,10 @@ export class UserController {
 
       if ('code' in e) {
         switch (e.code) {
-          case 'P2002':
+          case 'P2025':
             return res
               .status(400)
-              .json(errorResponse('User already exists', e.code));
+              .json(errorResponse('User not found', e.code));
           default:
             return res
               .status(400)
