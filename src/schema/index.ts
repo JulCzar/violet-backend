@@ -11,7 +11,7 @@ export const userWithId = user.extend({
 });
 
 export const health = z.object({
-  user: z.string(),
+  userId: z.string(),
   spo2: z.number(),
   bpm: z.number(),
   exercise: z.string().max(255, 'Too long!'),
