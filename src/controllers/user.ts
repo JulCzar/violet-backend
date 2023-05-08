@@ -4,6 +4,7 @@ import { user, userUpdate } from '../schema';
 import { prisma, socket } from '../../config';
 import { RequestWithId } from './types';
 import { socketKeys } from '../../config/socket_keys';
+import { errorResponse, successResponse, unknownError } from './messages';
 
 export class UserController {
   async create(req: Request, res: Response) {
@@ -13,41 +14,49 @@ export class UserController {
       const userCreated = await prisma.user.create({ data: userData });
 
       socket.emit(socketKeys.USER_ACTION);
-      return res.json({
-        message: `User ${userCreated.name} created with id ${userCreated.id}`,
-        user: userCreated,
-      });
+      return res.json(
+        successResponse(
+          `User ${userCreated.name} created with id ${userCreated.id}`,
+          userCreated
+        )
+      );
     } catch (e) {
-      if (!(e instanceof Error))
-        return res.status(400).json({ error: 'Unknown error' });
+      if (!(e instanceof Error)) return res.status(400).json(unknownError);
 
-      if (e instanceof z.ZodError) {
-        return res.status(417).json({ error: e.issues });
-      }
+      if (e instanceof z.ZodError)
+        return res
+          .status(417)
+          .json(
+            errorResponse('Validation error', 'E0001', { issues: e.issues })
+          );
 
       if ('code' in e) {
         switch (e.code) {
           case 'P2002':
-            return res.status(400).json({ error: 'User already exists' });
+            return res
+              .status(400)
+              .json(errorResponse('User already exists', e.code));
           default:
-            return res.status(400).json({ error: 'Unknown error' });
+            return res
+              .status(400)
+              .json(errorResponse('Unknown error', e.code + ''));
         }
       }
 
-      return res.status(400).json({ error: e.message });
+      return res.status(400).json(unknownError);
     }
   }
   async index(_: unknown, res: Response) {
     const users = await prisma.user.findMany();
 
-    res.json(users);
+    res.json(successResponse('', { users }));
   }
   async find(req: RequestWithId, res: Response) {
     const { id } = req.params;
 
     const user = await prisma.user.findUniqueOrThrow({ where: { id: +id } });
 
-    return res.json(user);
+    return res.json(successResponse('', user));
   }
   async update(req: RequestWithId, res: Response) {
     const { id } = req.params;
@@ -60,26 +69,33 @@ export class UserController {
       });
 
       socket.emit(socketKeys.USER_ACTION);
-      return res.json({
-        message: `User ${userUpdated.name} updated with success`,
-      });
+      return res.json(
+        successResponse(`User ${userUpdated.name} updated with success`)
+      );
     } catch (e) {
-      if (!(e instanceof Error))
-        return res.status(400).json({ error: 'Unknown error' });
+      if (!(e instanceof Error)) return res.status(400).json(unknownError);
 
       if (e instanceof z.ZodError)
-        return res.status(417).json({ error: e.issues });
+        return res
+          .status(417)
+          .json(
+            errorResponse('Validation error', 'E0001', { issues: e.issues })
+          );
 
       if ('code' in e) {
         switch (e.code) {
           case 'P2002':
-            return res.status(400).json({ error: 'User already exists' });
+            return res
+              .status(400)
+              .json(errorResponse('User already exists', e.code));
           default:
-            return res.status(400).json({ error: 'Unknown error' });
+            return res
+              .status(400)
+              .json(errorResponse('Unknown error', e.code + ''));
         }
       }
 
-      return res.status(400).json({ error: e.message });
+      return res.status(400).json(unknownError);
     }
   }
   async destroy(req: RequestWithId, res: Response) {
@@ -92,17 +108,18 @@ export class UserController {
 
       return res.json({ message: 'User deleted with success' });
     } catch (e) {
-      if (!(e instanceof Error))
-        return res.status(400).json({ error: 'Unknown error' });
+      if (!(e instanceof Error)) return res.status(400).json(unknownError);
 
       if ('code' in e) {
         switch (e.code) {
           default:
-            return res.status(400).json({ error: 'Unknown error' });
+            return res
+              .status(400)
+              .json(errorResponse('Unknown error', e.code + ''));
         }
       }
 
-      return res.status(400).json({ error: e.message });
+      return res.status(400).json(unknownError);
     }
   }
   async findOrCreate(req: Request, res: Response) {
@@ -121,8 +138,7 @@ export class UserController {
 
       return res.json(_userCreated);
     } catch (e) {
-      if (!(e instanceof Error))
-        return res.status(400).json({ error: 'Unknown error' });
+      if (!(e instanceof Error)) return res.status(400).json(unknownError);
 
       if (e instanceof z.ZodError) {
         return res

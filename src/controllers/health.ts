@@ -4,6 +4,7 @@ import { health, healthUpdate } from '../schema';
 import { z } from 'zod';
 import { prisma, socket } from '../../config';
 import { socketKeys } from '../../config/socket_keys';
+import { errorResponse, successResponse, unknownError } from './messages';
 
 export class HealthController {
   async create(req: Request, res: Response) {
@@ -14,31 +15,38 @@ export class HealthController {
 
       socket.emit(socketKeys.HEALTH_ACTION);
 
-      return res.status(201).json({ message: 'Created' });
+      return res.status(201).json(successResponse('Created'));
     } catch (e) {
-      if (!(e instanceof Error))
-        return res.status(400).json({ message: 'Unknown error' });
+      if (!(e instanceof Error)) return res.status(400).json(unknownError);
 
       if (e instanceof z.ZodError)
-        return res.status(400).json({ message: e.issues });
+        return res
+          .status(400)
+          .json(
+            errorResponse('Validation error', 'E0001', { issues: e.issues })
+          );
 
       if ('code' in e) {
         switch (e.code) {
           case 'P2002':
-            return res.status(400).json({ message: 'Duplicate entry' });
+            return res
+              .status(400)
+              .json(errorResponse('Duplicate entry', 'P2002'));
           default:
-            return res.status(400).json({ message: 'Unknown error' });
+            return res
+              .status(400)
+              .json(errorResponse('Unknown error', e.code + ''));
         }
       }
 
       console.log(e);
-      return res.status(400).json({ message: 'Unknown error' });
+      return res.status(400).json(unknownError);
     }
   }
   async index(req: Request, res: Response) {
     const healths = await prisma.health.findMany();
 
-    return res.status(200).json(healths);
+    return res.status(200).json(successResponse('', { healths }));
   }
   async find(req: RequestWithId, res: Response) {
     const { id } = req.params;
@@ -48,23 +56,26 @@ export class HealthController {
         where: { id: +id },
       });
 
-      return res.status(200).json(health);
+      return res.status(200).json(successResponse('', health));
     } catch (e) {
-      if (!(e instanceof Error))
-        return res.status(400).json({ message: 'Unknown error' });
+      if (!(e instanceof Error)) return res.status(400).json(unknownError);
 
       if ('code' in e) {
         switch (e.code) {
           case 'P2002':
-            return res.status(400).json({ message: 'Duplicate entry' });
+            return res
+              .status(400)
+              .json(errorResponse('Duplicate entry', 'P2002'));
           default:
             console.log(e.code);
-            return res.status(400).json({ message: 'Unknown error' });
+            return res
+              .status(400)
+              .json(errorResponse('Unknown error', e.code + ''));
         }
       }
 
       console.log(e);
-      return res.status(400).json({ message: 'Unknown error' });
+      return res.status(400).json(unknownError);
     }
   }
   async update(req: RequestWithId, res: Response) {
@@ -76,25 +87,32 @@ export class HealthController {
       await prisma.health.update({ where: { id: +id }, data: healthDto });
 
       socket.emit(socketKeys.HEALTH_ACTION);
-      return res.status(200).json({ message: 'Updated successfully' });
+      return res.status(200).json(successResponse('Updated successfully'));
     } catch (e) {
-      if (!(e instanceof Error))
-        return res.status(400).json({ message: 'Unknown error' });
+      if (!(e instanceof Error)) return res.status(400).json(unknownError);
 
       if (e instanceof z.ZodError)
-        return res.status(400).json({ message: e.issues });
+        return res.status(400).json(
+          errorResponse('Validation error', 'Z0001', {
+            issues: e.issues,
+          })
+        );
 
       if ('code' in e) {
         switch (e.code) {
           case 'P2002':
-            return res.status(400).json({ message: 'Duplicate entry' });
+            return res
+              .status(400)
+              .json(errorResponse('Duplicate entry', e.code));
           default:
-            return res.status(400).json({ message: 'Unknown error' });
+            return res
+              .status(400)
+              .json(errorResponse('Unknown error', e.code + ''));
         }
       }
 
       console.log(e);
-      return res.status(400).json({ message: 'Unknown error' });
+      return res.status(400).json(unknownError);
     }
   }
   async destroy(req: RequestWithId, res: Response) {
@@ -104,22 +122,25 @@ export class HealthController {
       prisma.health.delete({ where: { id: +id } });
 
       socket.emit(socketKeys.HEALTH_ACTION);
-      return res.status(200).json({ message: 'Deleted successfully' });
+      return res.status(200).json(successResponse('Deleted successfully'));
     } catch (e) {
-      if (!(e instanceof Error))
-        return res.status(400).json({ message: 'Unknown error' });
+      if (!(e instanceof Error)) return res.status(400).json(unknownError);
 
       if ('code' in e) {
         switch (e.code) {
           case 'P2002':
-            return res.status(400).json({ message: 'Duplicate entry' });
+            return res
+              .status(400)
+              .json(errorResponse('Duplicate entry', e.code));
           default:
-            return res.status(400).json({ message: 'Unknown error' });
+            return res
+              .status(400)
+              .json(errorResponse('Unknown error', e.code + ''));
         }
       }
 
       console.log(e);
-      return res.status(400).json({ message: 'Unknown error' });
+      return res.status(400).json(unknownError);
     }
   }
 }
