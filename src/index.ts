@@ -11,6 +11,18 @@ socket.on('connection', socket => {
   });
 });
 
+// middleware to log requests and method to console
+app.use((req, _, next) => {
+  console.log(
+    new Date().toISOString(),
+    req.method,
+    req.url,
+    req.ip,
+    req.headers?.['user-agent']
+  );
+  next();
+});
+
 app.use(json());
 app.use(cors());
 
