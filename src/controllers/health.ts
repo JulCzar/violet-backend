@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { RequestWithId } from './types';
-import { health } from '../schema';
+import { health, healthUpdate } from '../schema';
 import { z } from 'zod';
 import { prisma } from '../../config';
 
@@ -68,7 +68,7 @@ export class HealthController {
     const { id } = req.params;
 
     try {
-      const healthDto = health.parse(req.body);
+      const healthDto = healthUpdate.parse(req.body);
 
       await prisma.health.update({ where: { id: +id }, data: healthDto });
 

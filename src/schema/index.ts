@@ -4,10 +4,10 @@ export const user = z.object({
   name: z.string(),
 });
 
-export const userWithId = user.extend({
-  id: z.string(),
-  latitude: z.number(),
-  longitude: z.number(),
+export const userUpdate = user.extend({
+  name: z.string().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
 });
 
 export const health = z.object({
@@ -15,4 +15,11 @@ export const health = z.object({
   spo2: z.number(),
   bpm: z.number(),
   exercise: z.string().max(255, 'Too long!'),
+});
+
+export const healthUpdate = z.object({
+  userId: z.number().optional(),
+  spo2: z.number().optional(),
+  bpm: z.number().optional(),
+  exercise: z.string().max(255, 'Too long!').optional(),
 });

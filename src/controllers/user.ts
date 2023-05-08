@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { user } from '../schema';
+import { user, userUpdate } from '../schema';
 import { prisma } from '../../config';
 import { RequestWithId } from './types';
 
@@ -50,7 +50,7 @@ export class UserController {
   async update(req: RequestWithId, res: Response) {
     const { id } = req.params;
     try {
-      const userData = user.parse(req.body);
+      const userData = userUpdate.parse(req.body);
 
       const userUpdated = await prisma.user.update({
         where: { id: +id },
