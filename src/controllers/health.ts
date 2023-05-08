@@ -102,6 +102,10 @@ export class HealthController {
             return res
               .status(400)
               .json(errorResponse('Duplicate entry', e.code));
+          case 'P2025':
+            return res
+              .status(400)
+              .json(errorResponse('Entry not found', e.code));
           default:
             return res
               .status(400)

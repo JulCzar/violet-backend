@@ -114,6 +114,10 @@ export class UserController {
             return res
               .status(400)
               .json(errorResponse('User already exists', e.code));
+          case 'P2025':
+            return res
+              .status(400)
+              .json(errorResponse('User not found', e.code));
           default:
             return res
               .status(400)
