@@ -2,7 +2,8 @@ import { Request, Response } from 'express';
 import { RequestWithId } from './types';
 import { health, healthUpdate } from '../schema';
 import { z } from 'zod';
-import { prisma } from '../../config';
+import { prisma, socket } from '../../config';
+import { socketKeys } from '../../config/socket_keys';
 
 export class HealthController {
   async create(req: Request, res: Response) {
@@ -10,6 +11,8 @@ export class HealthController {
       const healthDto = health.parse(req.body);
 
       await prisma.health.create({ data: healthDto });
+
+      socket.emit(socketKeys.HEALTH_ACTION);
 
       return res.status(201).json({ message: 'Created' });
     } catch (e) {
@@ -72,6 +75,7 @@ export class HealthController {
 
       await prisma.health.update({ where: { id: +id }, data: healthDto });
 
+      socket.emit(socketKeys.HEALTH_ACTION);
       return res.status(200).json({ message: 'Updated successfully' });
     } catch (e) {
       if (!(e instanceof Error))
@@ -99,6 +103,7 @@ export class HealthController {
     try {
       prisma.health.delete({ where: { id: +id } });
 
+      socket.emit(socketKeys.HEALTH_ACTION);
       return res.status(200).json({ message: 'Deleted successfully' });
     } catch (e) {
       if (!(e instanceof Error))

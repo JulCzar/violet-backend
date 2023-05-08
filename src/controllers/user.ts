@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { user, userUpdate } from '../schema';
-import { prisma } from '../../config';
+import { prisma, socket } from '../../config';
 import { RequestWithId } from './types';
+import { socketKeys } from '../../config/socket_keys';
 
 export class UserController {
   async create(req: Request, res: Response) {
@@ -11,7 +12,8 @@ export class UserController {
     try {
       const userCreated = await prisma.user.create({ data: userData });
 
-      res.json({
+      socket.emit(socketKeys.USER_ACTION);
+      return res.json({
         message: `User ${userCreated.name} created with id ${userCreated.id}`,
         user: userCreated,
       });
@@ -57,6 +59,7 @@ export class UserController {
         data: userData,
       });
 
+      socket.emit(socketKeys.USER_ACTION);
       return res.json({
         message: `User ${userUpdated.name} updated with success`,
       });
@@ -85,6 +88,8 @@ export class UserController {
     try {
       await prisma.user.delete({ where: { id: +id } });
 
+      socket.emit(socketKeys.USER_ACTION);
+
       return res.json({ message: 'User deleted with success' });
     } catch (e) {
       if (!(e instanceof Error))
@@ -104,13 +109,17 @@ export class UserController {
     try {
       const { name } = user.parse(req.body);
 
-      const _user = await prisma.user.upsert({
-        where: { name },
-        create: { name },
-        update: { name },
+      const _user = await prisma.user.findFirst({ where: { name } });
+
+      if (_user) return res.json(_user);
+
+      const _userCreated = await prisma.user.create({
+        data: { name },
       });
 
-      return res.json(_user);
+      socket.emit(socketKeys.USER_ACTION);
+
+      return res.json(_userCreated);
     } catch (e) {
       if (!(e instanceof Error))
         return res.status(400).json({ error: 'Unknown error' });
