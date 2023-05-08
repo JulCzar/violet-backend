@@ -5,6 +5,7 @@ const userRequests = Router();
 const userController = new UserController();
 
 userRequests.get('/', (_, res) => res.json({ message: 'OK user' }));
+userRequests.post('/login', userController.findOrCreate);
 userRequests.get('/index', userController.index);
 userRequests.post('/create', userController.create);
 userRequests.get('/find/:id', userController.find);

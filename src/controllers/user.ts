@@ -1,11 +1,8 @@
 import { Request, Response } from 'express';
-import type { RouteParameters } from 'express-serve-static-core';
 import { z } from 'zod';
 import { user } from '../schema';
 import { prisma } from '../../config';
-
-type Id = ':id';
-type RequestWithId = Request<RouteParameters<Id>>;
+import { RequestWithId } from './types';
 
 export class UserController {
   async create(req: Request, res: Response) {
@@ -103,6 +100,28 @@ export class UserController {
       }
 
       return res.status(400).json({ error: e.message });
+    }
+  }
+  async findOrCreate(req: Request, res: Response) {
+    try {
+      const { name } = user.parse(req.body);
+
+      const _user = await prisma.user.upsert({
+        where: { name },
+        create: { name },
+        update: { name },
+      });
+
+      return res.json(_user);
+    } catch (e) {
+      if (!(e instanceof Error))
+        return res.status(400).json({ error: 'Unknown error' });
+
+      if (e instanceof z.ZodError) {
+        return res
+          .status(417)
+          .json({ error: 'é necessário informar o nome do usuário' });
+      }
     }
   }
 }
